@@ -209,6 +209,8 @@
           ch: '仿宋',
           en: '"FangSong"'
         }]
+
+
           //初始化canvas
           this.initCanvas()
       },
@@ -304,6 +306,14 @@
                   },
                   //增加对象
                   'object:added': (e)=>{
+                    this.fabricObj.getObjects().slice(0,-1).forEach(item=>{
+                      if(item.canvas.defaultCursor==='text' && item.text === ''){
+                        this.fabricObj.remove(item)
+                        // this.fabricObj.discardActiveObject()
+                      }
+                    })
+
+                    console.log(this.fabricObj)
                     // debugger
                   },
                   'object:modified':(e)=> {
@@ -420,7 +430,7 @@
       //绘制文字对象
           drawText() {
           // 创建字体对象
-              this.textboxObj = new fabric.Textbox(" ", {
+              this.textboxObj = new fabric.Textbox("", {
                 left: this.mouseFrom.x,
                 top: this.mouseFrom.y,
                 width: 100,
@@ -428,8 +438,6 @@
                 fontWeight:this.fontWeight,
                 fontFamily:this.fontFamily,
                 fontStyle:this.fontStyle,
-                // textAlign:'center',
-                // originX:'left',
                 fill: this.drawColor, // 填充色
                 hasControls: true,
                 borderColor: 'orange',
