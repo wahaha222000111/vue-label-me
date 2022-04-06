@@ -13,6 +13,18 @@
       <button type="button" :disabled="done" @click="downLoadImage">转换为base64并预览</button>
       <img :src="imageBase64" v-show="imageBase64!=''" alt="">
     </div>
+    <el-dialog title="尺度标准" :visible.sync="dialogVisible" width="30%" :before-close="handleClose">
+      <div class="box_dialog">
+        <div>
+          <el-input-number v-model="num" @change="handleChange" :step="1" :min="0.01" :precision="2" label="请输入尺度"></el-input-number>
+          <span class="box_cm">cm</span>
+        </div>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="handleClose">取 消</el-button>
+          <el-button type="primary" @click="handleSure">确 定</el-button>
+        </span>
+      </div>
+    </el-dialog>
   </div>
 </template>
 <script>
@@ -20,6 +32,10 @@ import { fabric } from 'fabric'
 export default {
   data () {
     return {
+      dialogVisible: false, // 弹窗
+      num: 1, // 标准尺寸
+      lineWidth: 0, // 标准线段在页面上显示的长度
+      lineWidthUnit: 0, // 单位标准线段的长度，1px代表 多少 cm
       currentTool: '',
       done: false,
       fabricObj: null,
@@ -161,6 +177,12 @@ export default {
           this.moveCount = 1;
           this.doDrawing = false;
           this.updateModifications(true);
+          if (this.currentTool == 'line') {
+            this.dialogVisible = true;
+          }
+          if (this.currentTool == 'juxing') {
+            this.drawTextUnit()
+          }
         },
         'mouse:move': (o) => {
           if (this.moveCount % 2 && !this.doDrawing) {
@@ -289,7 +311,7 @@ export default {
           break;
       }
     },
-    //绘制文字对象
+    // 绘制文字对象
     drawText () {
       this.textboxObj = new fabric.Textbox(" ", {
         left: this.mouseFrom.x,
@@ -305,8 +327,46 @@ export default {
       this.textboxObj.hiddenTextarea.focus();
       this.updateModifications(true)
     },
+    // 绘制文字备注
+    drawTextUnit () {
+      const w = Math.abs(this.mouseTo.x - this.mouseFrom.x);
+      const h = Math.abs(this.mouseTo.y - this.mouseFrom.y);
+      const textLeft = Math.abs((this.mouseTo.x - this.mouseFrom.x) / 2 + this.mouseFrom.x);
+      const textTop = Math.abs((this.mouseTo.y - this.mouseFrom.y) / 2 + this.mouseFrom.y);
+      console.log('this.lineWidthUnit', this.lineWidthUnit)
+      this.textboxObjWidth = new fabric.Textbox(`${(this.lineWidthUnit * w).toFixed(2)}cm`, {
+        left: textLeft - 20,
+        top: this.mouseFrom.y - 20,
+        fontSize: 18,
+        fill: this.drawColor,
+        hasControls: true,
+      });
+      this.fabricObj.add(this.textboxObjWidth);
+
+      this.textboxObjHeight = new fabric.Textbox(`${(this.lineWidthUnit * h).toFixed(2)}cm`, {
+        left: this.mouseTo.x + 5,
+        top: textTop - 10,
+        fontSize: 18,
+        fill: this.drawColor,
+        hasControls: true,
+      });
+      this.fabricObj.add(this.textboxObjHeight);
+
+      let objs = this.fabricObj.getObjects();
+      var group = new fabric.Group([this.textboxObjWidth, this.textboxObjHeight, objs[objs.length - 3]], {})
+
+      this.fabricObj.add(group);
+
+      console.log('objs', objs)
+      // this.textboxObj.enterEditing();
+      // this.textboxObj.hiddenTextarea.focus();
+      // this.updateModifications(true)
+    },
     drawing () {
       let _this = this;
+      const w = Math.abs(this.mouseTo.x - this.mouseFrom.x);
+      const h = Math.abs(this.mouseTo.y - this.mouseFrom.y);
+
       if (this.drawingObject) {
         this.fabricObj.remove(this.drawingObject)
       }
@@ -319,7 +379,10 @@ export default {
           fabricObject = new fabric.Line([this.mouseFrom.x, this.mouseFrom.y, this.mouseTo.x, this.mouseTo.y], {
             stroke: this.drawColor,
             strokeWidth: this.drawWidth
-          })
+          });
+
+          // 勾股定理求线段长度
+          this.lineWidth = Math.sqrt(Math.pow(w, 2) + Math.pow(h, 2));
           break;
         case 'arrow':
           fabricObject = new fabric.Path(this.drawArrow(this.mouseFrom.x, this.mouseFrom.y, this.mouseTo.x, this.mouseTo.y, 17.5, 17.5), {
@@ -347,6 +410,7 @@ export default {
             this.mouseTo.y + " L " +
             this.mouseFrom.x + " " +
             this.mouseFrom.y + " z";
+
           fabricObject = new fabric.Path(path, {
             left: this.mouseFrom.x,
             top: this.mouseFrom.y,
@@ -440,6 +504,22 @@ export default {
       this.imageBase64 = base64URl
       this.done = false
     },
+    /* 关闭弹窗 */
+    handleClose () {
+      this.dialogVisible = false;
+      this.undo();
+    },
+    /* 获取数字框值 */
+    handleChange (value) {
+      this.num = value;
+    },
+    /* 确认弹窗，计算标准 */
+    handleSure () {
+      this.lineWidthUnit = this.num / this.lineWidth;
+      this.dialogVisible = false;
+      // this.undo();
+      console.log('lineWidthUnit', this.lineWidthUnit);
+    }
   },
 }
 </script>
@@ -485,5 +565,20 @@ export default {
 }
 .download img {
   width: 100%;
+}
+.box_dialog {
+  padding: 20px;
+}
+.wraper >>> .el-dialog__header {
+  padding: 5px 20px;
+  text-align: center;
+}
+.box_cm {
+  margin-left: 10px;
+}
+.box_dialog >>> .dialog-footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
 }
 </style>
