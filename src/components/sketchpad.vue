@@ -71,40 +71,74 @@ export default {
       let _this = this
       this.fabricObj = new fabric.Canvas('canvas', {
         width: this.canvasWidth - 50,
-        height: 500
+        height: 500,
         // isDrawingMode: false,
         // selectable: true,
         // selection: false,
-        // devicePixelRatio: true, //Retina 高清屏 屏幕支持
+        devicePixelRatio: true, //Retina 高清屏 屏幕支持
       });
       let img = document.getElementById('test-img');
       this.fabricObj.freeDrawingBrush.color = '#E34F51'
       this.fabricObj.freeDrawingBrush.width = 2
 
       this.fabricObj.add(
-        // new fabric.Rect({ top: 100, left: 100, width: 50, height: 50, fill: '#f55' }),
+        // new fabric.Rect({ top: 100, left: 100, width: 500, height: 100, fill: '#f55' }),
         // new fabric.Circle({ top: 140, left: 230, radius: 75, fill: 'green' }),
         // new fabric.Triangle({ top: 300, left: 210, width: 100, height: 100, fill: 'blue' }),
         // new fabric.Image(img, { top: 0, left: 0, width: 500, hegith: 500 }),
       );
-      let imgInstance = new fabric.Image(img, {
-        left: 100, // 图片相对画布的左侧距离
-        top: 100, // 图片相对画布的顶部距离
-        width: 100,
-        height: 100,
-        angle: 30, // 图片旋转角度
-        opacity: 0.85, // 图片透明度
-        // 这里可以通过scaleX和scaleY来设置图片绘制后的大小，这里为原来大小的一半
-        // scaleX: 0.5, 
-        // scaleY: 0.5
-      });
-      imgInstance.set({
-        borderColor: 'red',
-        cornerColor: 'green',
-        cornerSize: 6
+      // let imgInstance = new fabric.Image(img, {
+      //   left: 100, // 图片相对画布的左侧距离
+      //   top: 100, // 图片相对画布的顶部距离
+      //   width: 100,
+      //   height: 100,
+      //   angle: 30, // 图片旋转角度
+      //   opacity: 0.85, // 图片透明度
+      //   // 这里可以通过scaleX和scaleY来设置图片绘制后的大小，这里为原来大小的一半
+      //   // scaleX: 0.5, 
+      //   // scaleY: 0.5
+      // });
+      // imgInstance.set({
+      //   borderColor: 'red',
+      //   cornerColor: 'green',
+      //   cornerSize: 6
+      // });
+      // this.fabricObj.add(imgInstance);
 
+      var yellow = new fabric.Circle({
+        top: 200,
+        left: 0,
+        radius: 100,
+        strokeDashArray: [5, 5],
+        stroke: 'black',
+        strokeWidth: 5,
+        fill: 'yellow'
       });
-      this.fabricObj.add(imgInstance);
+      this.fabricObj.add(yellow);
+
+      var blue = new fabric.Circle({
+        top: 150,
+        left: 80,
+        radius: 100,
+        strokeDashArray: [5, 5],
+        stroke: 'black',
+        strokeWidth: 5,
+        fill: 'blue',
+        globalCompositeOperation: 'source-atop'
+      });
+      this.fabricObj.add(blue);
+
+      var green = new fabric.Circle({
+        top: 0,
+        left: 0,
+        radius: 100,
+        strokeDashArray: [5, 5],
+        stroke: 'black',
+        strokeWidth: 5,
+        fill: 'green'
+      });
+      this.fabricObj.add(green);
+
       //绑定画板事件
       this.fabricObjAddEvent();
     },
@@ -127,7 +161,6 @@ export default {
           this.moveCount = 1;
           this.doDrawing = false;
           this.updateModifications(true);
-          this.getImg()
         },
         'mouse:move': (o) => {
           if (this.moveCount % 2 && !this.doDrawing) {
@@ -139,25 +172,25 @@ export default {
           this.mouseTo.y = o.pointer.y;;
           this.drawing();
         },
-        //对象移动时间
+        //对象移动时间 限制移动在画布内
         'object:moving': (e) => {
           e.target.opacity = 0.5;
-          var obj = e.target;
-          // if object is too big ignore
-          if (obj.currentHeight > obj.canvas.height || obj.currentWidth > obj.canvas.width) {
-            return;
-          }
-          obj.setCoords();
-          // top-left  corner
-          if (obj.getBoundingRect().top < 0 || obj.getBoundingRect().left < 0) {
-            obj.top = Math.max(obj.top, obj.top - obj.getBoundingRect().top + 20);
-            obj.left = Math.max(obj.left, obj.left - obj.getBoundingRect().left + 20);
-          }
-          // bot-right corner
-          if (obj.getBoundingRect().top + obj.getBoundingRect().height > obj.canvas.height || obj.getBoundingRect().left + obj.getBoundingRect().width > obj.canvas.width) {
-            obj.top = Math.min(obj.top, obj.canvas.height - obj.getBoundingRect().height + obj.top - obj.getBoundingRect().top - 20);
-            obj.left = Math.min(obj.left, obj.canvas.width - obj.getBoundingRect().width + obj.left - obj.getBoundingRect().left - 20);
-          }
+          // var obj = e.target;
+          // // if object is too big ignore
+          // if (obj.currentHeight > obj.canvas.height || obj.currentWidth > obj.canvas.width) {
+          //   return;
+          // }
+          // obj.setCoords();
+          // // top-left  corner
+          // if (obj.getBoundingRect().top < 0 || obj.getBoundingRect().left < 0) {
+          //   obj.top = Math.max(obj.top, obj.top - obj.getBoundingRect().top + 20);
+          //   obj.left = Math.max(obj.left, obj.left - obj.getBoundingRect().left + 20);
+          // }
+          // // bot-right corner
+          // if (obj.getBoundingRect().top + obj.getBoundingRect().height > obj.canvas.height || obj.getBoundingRect().left + obj.getBoundingRect().width > obj.canvas.width) {
+          //   obj.top = Math.min(obj.top, obj.canvas.height - obj.getBoundingRect().height + obj.top - obj.getBoundingRect().top - 20);
+          //   obj.left = Math.min(obj.left, obj.canvas.width - obj.getBoundingRect().width + obj.left - obj.getBoundingRect().left - 20);
+          // }
         },
         //增加对象
         'object:added': (e) => {
@@ -261,10 +294,11 @@ export default {
       this.textboxObj = new fabric.Textbox(" ", {
         left: this.mouseFrom.x,
         top: this.mouseFrom.y,
-        width: 220,
+        // width: 220,
         fontSize: 18,
         fill: this.drawColor,
-        hasControls: true
+        hasControls: true,
+        globalCompositeOperation: 'source-atop'
       });
       this.fabricObj.add(this.textboxObj);
       this.textboxObj.enterEditing();
@@ -318,7 +352,7 @@ export default {
             top: this.mouseFrom.y,
             stroke: this.drawColor,
             strokeWidth: this.drawWidth,
-            fill: "rgba(255, 255, 255, 0)"
+            fill: "white",
           });
           break;
         case "cricle": //正圆
@@ -406,33 +440,6 @@ export default {
       this.imageBase64 = base64URl
       this.done = false
     },
-    getImg () {
-      this.imgcoordinate = [];
-      let items = this.fabricObj.getObjects();
-      // items.forEach((item, index) => {
-      //   let itemcoord = {
-      //     floorIndex: index,
-      //     tl: {
-      //       x: item.aCoords.tl.x,
-      //       y: item.aCoords.tl.y
-      //     },
-      //     tr: {
-      //       x: item.aCoords.tr.x,
-      //       y: item.aCoords.tr.y
-      //     },
-      //     bl: {
-      //       x: item.aCoords.bl.x,
-      //       y: item.aCoords.bl.y
-      //     },
-      //     br: {
-      //       x: item.aCoords.br.x,
-      //       y: item.aCoords.br.y
-      //     }
-      //   };
-      //   this.imgcoordinate.push(itemcoord);
-      // });
-    },
-
   },
 }
 </script>
