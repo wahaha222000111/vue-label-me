@@ -2,7 +2,7 @@
   <div class="wraper" ref="wraper">
     <div class="canvas-wraper">
       <canvas id="canvas" ref="canvas"></canvas>
-      <img id="test-img" src="../assets/img/kotei_9628.png" style="display: none">
+      <img id="test-img" src="../assets/img/cup.png" style="display: none">
     </div>
     <div class="controlPanel">
       <div :class="[initIdx===idx ? 'contro-item active' : 'contro-item']" v-for="(item,idx) in toolsArr" :key="idx" @click="handleTools(item, idx)">
@@ -28,7 +28,7 @@
   </div>
 </template>
 <script>
-import { fabric } from 'fabric'
+import { fabric } from 'fabric';
 export default {
   data () {
     return {
@@ -41,20 +41,22 @@ export default {
       fabricObj: null,
       initIdx: 0,
       toolsArr: [
-        { name: 'pencil', icon: ' icon-pencil' },
+        // { name: 'pencil', icon: ' icon-pencil' },
+        { name: 'move', icon: ' el-icon-mouse' },
         { name: 'line', icon: ' icon-line' },
-        { name: 'arrow', icon: ' icon-arrow' },
-        { name: 'xuxian', icon: ' icon-xuxian' },
+        { name: 'picture', icon: ' el-icon-picture-outline' },
+        // { name: 'arrow', icon: ' icon-arrow' },
+        // { name: 'xuxian', icon: ' icon-xuxian' },
         { name: 'text', icon: ' icon-ziti' },
         { name: 'juxing', icon: ' icon-juxing' },
-        { name: 'cricle', icon: ' icon-yuanxing' },
+        { name: 'circle', icon: ' icon-yuanxing' },
         { name: 'ellipse', icon: ' icon-tuoyuanxing' },
-        { name: 'equilateral', icon: ' icon-sanjiaoxing' },
+        // { name: 'equilateral', icon: ' icon-sanjiaoxing' },
         { name: 'remove', icon: ' icon-remove' },
-        { name: 'undo', icon: ' icon-huitui' },
-        { name: 'redo', icon: ' icon-xiangqian' },
+        // { name: 'undo', icon: ' icon-huitui' },
+        // { name: 'redo', icon: ' icon-xiangqian' },
         { name: 'reset', icon: ' icon-reset' },
-        { name: 'move', icon: ' el-icon-mouse' },
+        { name: 'down', icon: ' el-icon-download' },
       ],
       mouseFrom: {},
       mouseTo: {},
@@ -75,10 +77,10 @@ export default {
     }
   },
   created () {
-    console.log('create');
+    // console.log('create');
   },
   mounted () {
-    console.log('mounted');
+    // console.log('mounted');
     //初始化canvas
     this.initCanvas()
   },
@@ -88,6 +90,7 @@ export default {
       this.fabricObj = new fabric.Canvas('canvas', {
         width: this.canvasWidth - 50,
         height: 500,
+        // backgroundColor: 'black',
         // isDrawingMode: false,
         // selectable: true,
         // selection: false,
@@ -98,62 +101,14 @@ export default {
       this.fabricObj.freeDrawingBrush.width = 2
 
       this.fabricObj.add(
-        // new fabric.Rect({ top: 100, left: 100, width: 500, height: 100, fill: '#f55' }),
+        // new fabric.Rect({ top: 100, left: 100, width: 500, height: 100, fill: 'rgba(255,255,255,0)', stroke: '#000' }),
         // new fabric.Circle({ top: 140, left: 230, radius: 75, fill: 'green' }),
         // new fabric.Triangle({ top: 300, left: 210, width: 100, height: 100, fill: 'blue' }),
         // new fabric.Image(img, { top: 0, left: 0, width: 500, hegith: 500 }),
       );
-      // let imgInstance = new fabric.Image(img, {
-      //   left: 100, // 图片相对画布的左侧距离
-      //   top: 100, // 图片相对画布的顶部距离
-      //   width: 100,
-      //   height: 100,
-      //   angle: 30, // 图片旋转角度
-      //   opacity: 0.85, // 图片透明度
-      //   // 这里可以通过scaleX和scaleY来设置图片绘制后的大小，这里为原来大小的一半
-      //   // scaleX: 0.5, 
-      //   // scaleY: 0.5
-      // });
-      // imgInstance.set({
-      //   borderColor: 'red',
-      //   cornerColor: 'green',
-      //   cornerSize: 6
-      // });
-      // this.fabricObj.add(imgInstance);
 
-      var yellow = new fabric.Circle({
-        top: 200,
-        left: 0,
-        radius: 100,
-        strokeDashArray: [5, 5],
-        stroke: 'black',
-        strokeWidth: 5,
-        fill: 'yellow'
-      });
-      this.fabricObj.add(yellow);
-
-      var blue = new fabric.Circle({
-        top: 150,
-        left: 80,
-        radius: 100,
-        strokeDashArray: [5, 5],
-        stroke: 'black',
-        strokeWidth: 5,
-        fill: 'blue',
-        globalCompositeOperation: 'source-atop'
-      });
-      this.fabricObj.add(blue);
-
-      var green = new fabric.Circle({
-        top: 0,
-        left: 0,
-        radius: 100,
-        strokeDashArray: [5, 5],
-        stroke: 'black',
-        strokeWidth: 5,
-        fill: 'green'
-      });
-      this.fabricObj.add(green);
+      fabric.Object.prototype.transparentCorners = false;
+      this.fabricObj.preserveObjectStacking = true;
 
       //绑定画板事件
       this.fabricObjAddEvent();
@@ -180,8 +135,8 @@ export default {
           if (this.currentTool == 'line') {
             this.dialogVisible = true;
           }
-          if (this.currentTool == 'juxing') {
-            this.drawTextUnit()
+          if (this.currentTool == 'juxing' || this.currentTool == 'ellipse' || this.currentTool == 'circle') {
+            this.drawTextUnit();
           }
         },
         'mouse:move': (o) => {
@@ -197,22 +152,33 @@ export default {
         //对象移动时间 限制移动在画布内
         'object:moving': (e) => {
           e.target.opacity = 0.5;
-          // var obj = e.target;
-          // // if object is too big ignore
-          // if (obj.currentHeight > obj.canvas.height || obj.currentWidth > obj.canvas.width) {
-          //   return;
-          // }
-          // obj.setCoords();
-          // // top-left  corner
-          // if (obj.getBoundingRect().top < 0 || obj.getBoundingRect().left < 0) {
-          //   obj.top = Math.max(obj.top, obj.top - obj.getBoundingRect().top + 20);
-          //   obj.left = Math.max(obj.left, obj.left - obj.getBoundingRect().left + 20);
-          // }
-          // // bot-right corner
-          // if (obj.getBoundingRect().top + obj.getBoundingRect().height > obj.canvas.height || obj.getBoundingRect().left + obj.getBoundingRect().width > obj.canvas.width) {
-          //   obj.top = Math.min(obj.top, obj.canvas.height - obj.getBoundingRect().height + obj.top - obj.getBoundingRect().top - 20);
-          //   obj.left = Math.min(obj.left, obj.canvas.width - obj.getBoundingRect().width + obj.left - obj.getBoundingRect().left - 20);
-          // }
+          let padding = 10;
+          var obj = e.target;
+
+          // if object is too big ignore
+          if (obj.currentHeight > obj.canvas.height - padding * 2 ||
+            obj.currentWidth > obj.canvas.width - padding * 2) {
+            return;
+          }
+          obj.setCoords();
+
+          // top-left corner
+          if (obj.getBoundingRect().top < padding ||
+            obj.getBoundingRect().left < padding) {
+            obj.top = Math.max(obj.top, obj.top - obj.getBoundingRect().top + padding);
+            obj.left = Math.max(obj.left, obj.left - obj.getBoundingRect().left + padding);
+          }
+
+          // bot-right corner
+          if (obj.getBoundingRect().top + obj.getBoundingRect().height > obj.canvas.height - padding ||
+            obj.getBoundingRect().left + obj.getBoundingRect().width > obj.canvas.width - padding) {
+            obj.top = Math.min(
+              obj.top,
+              obj.canvas.height - obj.getBoundingRect().height + obj.top - obj.getBoundingRect().top - padding);
+            obj.left = Math.min(
+              obj.left,
+              obj.canvas.width - obj.getBoundingRect().width + obj.left - obj.getBoundingRect().left - padding);
+          }
         },
         //增加对象
         'object:added': (e) => {
@@ -307,6 +273,12 @@ export default {
         case 'move':
           this.fabricObj.skipTargetFind = false;
           break;
+        case 'picture':
+          this.renderPicture();
+          break;
+        case 'down':
+          this.handleDown();
+          break;
         default:
           break;
       }
@@ -320,7 +292,7 @@ export default {
         fontSize: 18,
         fill: this.drawColor,
         hasControls: true,
-        globalCompositeOperation: 'source-atop'
+        // globalCompositeOperation: 'source-atop'
       });
       this.fabricObj.add(this.textboxObj);
       this.textboxObj.enterEditing();
@@ -329,23 +301,68 @@ export default {
     },
     // 绘制文字备注
     drawTextUnit () {
+      console.log('this.currentTool', this.currentTool)
+      const { currentTool } = this;
+      // 文字备注位置参数
+      let textboxLeft1, textboxTop1, textboxLeft2, textboxTop2, textWidth, textHeight = 0;
+
+      // 鼠标移动的长度 绝对值
       const w = Math.abs(this.mouseTo.x - this.mouseFrom.x);
+      // 鼠标移动的宽度 绝对值
       const h = Math.abs(this.mouseTo.y - this.mouseFrom.y);
-      const textLeft = Math.abs((this.mouseTo.x - this.mouseFrom.x) / 2 + this.mouseFrom.x);
-      const textTop = Math.abs((this.mouseTo.y - this.mouseFrom.y) / 2 + this.mouseFrom.y);
       console.log('this.lineWidthUnit', this.lineWidthUnit)
-      this.textboxObjWidth = new fabric.Textbox(`${(this.lineWidthUnit * w).toFixed(2)}cm`, {
-        left: textLeft - 20,
-        top: this.mouseFrom.y - 20,
+
+      // path 路径
+      const xf = this.mouseFrom.x;
+      const xt = this.mouseTo.x;
+      const yf = this.mouseFrom.y;
+      const yt = this.mouseTo.y;
+      const path = `M${xf} ${yf} L${xf} ${yt} L${xt} ${yt} Z`;
+
+      console.log(path)
+      if (currentTool === 'juxing') {
+        textboxLeft1 = Math.abs((this.mouseTo.x - this.mouseFrom.x) / 2 + this.mouseFrom.x) - 20;
+        textboxTop1 = this.mouseFrom.y - 20;
+        textboxLeft2 = this.mouseTo.x + 5;
+        textboxTop2 = Math.abs((this.mouseTo.y - this.mouseFrom.y) / 2 + this.mouseFrom.y) - 10;
+        textWidth = `${(this.lineWidthUnit * w).toFixed(2)}cm`;
+        textHeight = `${(this.lineWidthUnit * h).toFixed(2)}cm`;
+      }
+
+      if (currentTool === 'ellipse') {
+        textboxLeft1 = this.mouseFrom.x;
+        textboxTop1 = this.mouseFrom.y - h - 20;
+        textboxLeft2 = this.mouseFrom.x + w + 5;
+        textboxTop2 = this.mouseFrom.y - 10;
+        // 椭圆周长
+        const l = (2 * Math.PI * h + 4 * (w - h)) / 2
+        textWidth = `${(this.lineWidthUnit * l).toFixed(2)}cm`;
+        textHeight = `${(this.lineWidthUnit * l).toFixed(2)}cm`;
+      }
+
+      if (currentTool === 'circle') {
+        textboxLeft1 = this.mouseFrom.x + w / 2 + 10;
+        textboxTop1 = this.mouseFrom.y - 20;
+        textboxLeft2 = this.mouseFrom.x + w + 30;
+        textboxTop2 = this.mouseFrom.y + h;
+        // 椭圆周长
+        const l = Math.PI * w / 2
+        textWidth = `${(this.lineWidthUnit * l).toFixed(2)}cm`;
+        textHeight = `${(this.lineWidthUnit * l).toFixed(2)}cm`;
+      }
+
+      this.textboxObjWidth = new fabric.Textbox(textWidth, {
+        left: textboxLeft1,
+        top: textboxTop1,
         fontSize: 18,
         fill: this.drawColor,
         hasControls: true,
       });
       this.fabricObj.add(this.textboxObjWidth);
 
-      this.textboxObjHeight = new fabric.Textbox(`${(this.lineWidthUnit * h).toFixed(2)}cm`, {
-        left: this.mouseTo.x + 5,
-        top: textTop - 10,
+      this.textboxObjHeight = new fabric.Textbox(textHeight, {
+        left: textboxLeft2,
+        top: textboxTop2,
         fontSize: 18,
         fill: this.drawColor,
         hasControls: true,
@@ -357,7 +374,6 @@ export default {
 
       this.fabricObj.add(group);
 
-      console.log('objs', objs)
       // this.textboxObj.enterEditing();
       // this.textboxObj.hiddenTextarea.focus();
       // this.updateModifications(true)
@@ -416,10 +432,10 @@ export default {
             top: this.mouseFrom.y,
             stroke: this.drawColor,
             strokeWidth: this.drawWidth,
-            fill: "white",
+            fill: "rgba(255, 255, 255, 1)",
           });
           break;
-        case "cricle": //正圆
+        case "circle": //正圆
           let radius = Math.sqrt((this.mouseTo.x - this.mouseFrom.x) * (this.mouseTo.x - this.mouseFrom.x) + (this.mouseTo.y - this.mouseFrom.y) * (this.mouseTo.y - this.mouseFrom.y)) / 2;
           fabricObject = new fabric.Circle({
             left: this.mouseFrom.x,
@@ -517,9 +533,65 @@ export default {
     handleSure () {
       this.lineWidthUnit = this.num / this.lineWidth;
       this.dialogVisible = false;
-      // this.undo();
       console.log('lineWidthUnit', this.lineWidthUnit);
-    }
+
+      let objs = this.fabricObj.getObjects();
+      console.log('objs', objs)
+      objs.map((item, index) => {
+        if (item.type === 'group') {
+          let height = objs[index - 3].height;
+          let width = objs[index - 3].width;
+          objs[index - 1].set({
+            text: `${(this.lineWidthUnit * height).toFixed(2)}cm`
+          })
+          objs[index - 2].set({
+            text: `${(this.lineWidthUnit * width).toFixed(2)}cm`
+          })
+        }
+      })
+      this.fabricObj.remove(objs[objs.length - 1]);
+      // this.fabricObj.sendBackwards(objs[objs.length - 2]);
+      this.fabricObj.renderAll();
+    },
+    /* 渲染图片 */
+    8 () {
+      // 获取图片的原始尺寸
+      let img = document.getElementById('test-img');
+      let img_url = require('../assets/img/cup.png');
+      let image = new Image();
+      image.src = img_url;
+      console.log('width:' + image.width + ',height:' + image.height);
+
+
+      // this.fabricObj.setBackgroundImage(require('../assets/img/cup.png'), this.fabricObj.renderAll.bind(this.fabricObj), {
+      //   opacity: 1,
+      //   width: image.width,
+      //   height: image.height,
+      //   repeat: 'no-repeat',
+      //   // Needed to position backgroundImage at 0/0
+      //   originX: 'left',
+      //   originY: 'top',
+      // });
+
+      let imgInstance = new fabric.Image(img, {
+        left: 0, // 图片相对画布的左侧距离
+        top: 0, // 图片相对画布的顶部距离
+        width: image.width,
+        height: image.height,
+        repeat: 'no-repeat',
+        // angle: 30, // 图片旋转角度
+        // opacity: 0.85, // 图片透明度
+        // 这里可以通过scaleX和scaleY来设置图片绘制后的大小，这里为原来大小的一半
+        scaleX: 0.5,
+        scaleY: 0.5
+      });
+      this.fabricObj.add(imgInstance);
+    },
+    /* 下移 */
+    handleDown () {
+      var level = this.fabricObj.getActiveObject();// 获取当前被选中的元素
+      this.fabricObj.sendBackwards(level);
+    },
   },
 }
 </script>
@@ -540,9 +612,9 @@ export default {
 .wraper .controlPanel {
   width: 100%;
   height: 62px;
-  background: #ddd;
+  /* background: #ddd; */
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   margin-bottom: 15px;
 }
