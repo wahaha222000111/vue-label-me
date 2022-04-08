@@ -1,6 +1,6 @@
 <template>
   <div class="wraper" ref="wraper">
-<div class="operate">
+    <div class="operate">
   <ul>
     <li><label >颜色：</label><el-color-picker v-model="drawColor"></el-color-picker></li>
   </ul>
@@ -78,7 +78,6 @@
   </ul>
   <el-button class="upload-btn" v-show="showUploadBtn" type="primary" @click.stop="uploadImage">上传图片</el-button>
 </div>
-
     <div class="canvas-wraper">
       <canvas id="canvas" ref="canvas"></canvas>
       <img id="test-img" src="../assets/img/kotei_9628.png" style="display: none">
@@ -92,6 +91,9 @@
         <span>{{item.title}}</span>
       </div>
     </div>
+    <ul class="photoTier">
+<!--      <li v-for="item in fabricObj">111</li>-->
+    </ul>
     <div class="download">
       <button type="button" :disabled="done" @click="downLoadImage">转换为base64并预览</button>
     </div>
@@ -103,6 +105,7 @@
 </template>
 <script>
   import { fabric } from 'fabric'
+  import FontFaceObserver from 'fontfaceobserver'
   export default{
       data() {
         return{
@@ -145,36 +148,82 @@
             imageBase64: '',
             zoom: window.zoom ? window.zoom : 1,
             fontFamily:window.getComputedStyle(document.body)['fontFamily'],
+            // fontFamily:'"LiDeBiao-Xing32ea2bb9de92440e"',
             fontFamilyList:[],
             fontWeight:400,
             fontWeightList:[100,200,300,400,500,600,700,800],
             fontStyle:'normal',
-            fontSize:16,
+            fontSize:40,
             lineSegmentList:[],
             polygonList:[],
             pencilWeight:1,
+            selectObject:null // 当前选中的对象
         }
       },
       computed:{
-          canvasWidth() {
-              return window.innerWidth
-          },
+        canvasWidth() {
+            return window.innerWidth
+        },
         pencilPreview(){
             return{
               color:this.drawColor,
               width:this.pencilWeight
             }
+        },
+        textPreview(){
+          return {
+            fontSize:this.fontSize,
+            color:this.drawColor,
+            fontWeight:this.fontWeight,
+            fontStyle:this.fontStyle,
+            fontFamily:this.fontFamily
+          }
         }
       },
     watch:{
       pencilPreview(newVal){
           this.fabricObj.freeDrawingBrush.color = newVal.color
           this.fabricObj.freeDrawingBrush.width = newVal.width
+      },
+      // 监听画笔预设
+      textPreview(){
+        console.log(this.selectObject.type)
+        if(['textbox','i-text'].includes(this.selectObject.type)){
+          this.selectObject.set({
+            fontSize: this.fontSize, // 字号
+            fontWeight:this.fontWeight,
+            fontFamily:this.fontFamily,
+            fontStyle:this.fontStyle,
+            fill: this.drawColor, // 填充色
+          })
+          // fabric.charWidthsCache[this.selectObject] = {}
+          // this.fabricObj.getActiveObject()._initDimensions()
+          // this.fabricObj.getActiveObject().setCoords();
+          this.fabricObj.requestRenderAll()
         }
+      },
+      // fontFamily(newVal){
+      //   this.fabricObj.getActiveObject().set('fontFamily',newVal)
+      //   this.fabricObj.requestRenderAll()
+      //   // console.log(newVal.slice(1,newVal.length-1))
+      //   // let font = new FontFaceObserver(newVal.slice(1,newVal.length-1))
+      //   // font.load().then(()=>{
+      //   //   this.selectObject.set('fontFamily',font)
+      //   //   this.fabricObj.requestRenderAll()
+      //   // }).catch(function(e) {
+      //   //   console.log(e)
+      //   //   alert('font loading failed ' + font);
+      //   // });
+      //   // console.log(newVal)
+      //   // if(newVal === '"winmantun23001"'){
+      //   //   window.$webfont.submit('test1')
+      //   // }
+      // }
     },
       created(){
       },
       mounted() {
+        console.log(window.$webfont)
           this.lineSegmentList = [
             { label:'直线', value:'line', url:'' },
             { label:'虚线', value:'xuxian', url:'' },
@@ -208,8 +257,16 @@
         }, {
           ch: '仿宋',
           en: '"FangSong"'
+        },{
+          ch:'德彪钢笔行书',
+          en:'"LiDeBiao-Xing32ea2bb9de92440e"'
+        },{
+          ch:'测试',
+          en:'"testFont"'
+        },{
+          ch:'测试1',
+          en:'"test1"'
         }]
-
 
           //初始化canvas
           this.initCanvas()
@@ -247,22 +304,21 @@
                   // new fabric.Triangle({ top: 300, left: 210, width: 100, height: 100, fill: 'blue' }),
                   // new fabric.Image(img,{top:0,left:0,width:500,height:500}),
               );
-            /*  let imgInstance = new fabric.Image(img, {
-                  left: 0,
-                  top: 0,
-                 /!* width:1000,
-                  height:500,*!/
-                  // angle: 30,
-                  opacity: 1
-              });
-                  this.fabricObj.add(imgInstance);*/
               //绑定画板事件
               this.fabricObjAddEvent()
           },
       //时间监听
           fabricObjAddEvent() {
               this.fabricObj.on({
+                  'mouse:dblclick':(e)=>{
+                    console.log('双击事件',e)
+                    console.log(this.fabricObj)
+                    // if(this.selectObject && ['textbox','i-text'].includes(this.selectObject.type)){
+                    //   this.selectObject.enterEditing()
+                    // }
+                  },
                   'mouse:down': (o)=> {
+
                     // if (this.ableEdit){
                     //   return
                     // }
@@ -273,24 +329,95 @@
                     // this.mouseFrom.x = o.pointer.x;
                     // this.mouseFrom.y = o.pointer.y;
 
+
+
+                    // if(o.target){
+                    //   if(['textbox','i-text'].includes(o.target.type)){
+                    //     this.selectObject = o.target
+                    //     this.drawColor = o.target.fill
+                    //     this.fontFamily = o.target.fontFamily
+                    //     this.fontSize = o.target.fontSize
+                    //     this.fontStyle = o.target.fontStyle
+                    //     this.fontWeight = o.target.fontWeight
+                    //   }
+                    // }
                     this.mouseFrom.x = o.pointer.x;
                     this.mouseFrom.y = o.pointer.y;
                     this.doDrawing = true;
-                    if(this.currentTool=='text') {
-                      this.drawText()
-                    }
+                    // if(this.currentTool=='text') {
+                    //   this.drawText()
+                    // }
                   },
                   'mouse:up': (o)=> {
-                    this.mouseTo.x = o.pointer.x;
-                    this.mouseTo.y = o.pointer.y;
-                    this.drawingObject = null;
-                    this.moveCount = 1;
-                    this.doDrawing = false;
-                    if(this.currentTool!=='text') {
-                      this.updateModifications(true);
+                      this.mouseTo.x = o.pointer.x;
+                      this.mouseTo.y = o.pointer.y;
+                      // this.drawingObject = null;
+                      // this.moveCount = 1;
+                      this.doDrawing = false;
+
+                    /**
+                     *  字体相关：
+                     *  1. 需要判断当前的工具是否选择了text,之后所有的操作都将在text之中运行
+                     *  2. 判断鼠标目前是单击还是框选
+                     *      单击: 流程见 2-1
+                     *      框选: 根据框选范围生成文本框
+                     *
+                     *  2-1. 判断鼠标当前的抬起位置是否存在对象，若是存在则判断当前的对象是否是textbox，
+                     *                              若不存在，则直接创建新的textbox
+                     *  2-1-1. 若是textbox，则操作移动或编辑，若不是textbox，则 操作创建新的textbox
+                     *
+                     *  3. 若是目前有正在编辑的文本框，则取消文本框的编辑状态
+                     */
+
+                    if(this.currentTool === 'text'){
+                      // 存在正在编辑的textbox,取消编辑状态
+                      if(Math.abs((this.mouseTo.x - this.mouseFrom.x))<10&&Math.abs((this.mouseTo.y - this.mouseFrom.y))<10){
+
+                        // 选中textbox对象
+                        if(o.target && ['textbox','i-text'].includes(o.target.type)){
+                          // 触发编辑状态
+                          o.target.enterEditing()
+                          this.selectObject = o.target
+                          this.drawColor = o.target.fill
+                          this.fontFamily = o.target.fontFamily
+                          this.fontSize = o.target.fontSize
+                          this.fontStyle = o.target.fontStyle
+                          this.fontWeight = o.target.fontWeight
+                        } else {
+                          // 创建新的textbox
+                          this.drawText()
+                        }
+
+                      } else {
+                        console.log('框选的文本框',this.mouseFrom,this.mouseTo)
+                        this.drawTextGroup()
+
+                      }
+
+                    }else{
+                      this.updateModifications(true)
                     }
                   },
+                  // 'mouse:over':(e)=>{
+                  //   console.log(e)
+                  // },
                   'mouse:move': (o)=> {
+                    // console.warn(o)
+                    // if(this.currentTool==='text'){
+                    //   if(o.target){
+                    //     this.fabricObj.setCursor('text')
+                    //   }else {
+                    //     this.fabricObj.setCursor('crosshair')
+                    //   }
+                    // }else{
+                    //   this.fabricObj.setCursor()
+                    // }
+
+                    // console.log(this.moveCount)
+                    // if(this.moveCount % 2 && this.currentTool==='text'){
+                    //   console.log('move事件',o)
+                    // }
+                    // this.moveCount++;
                     if (this.moveCount % 2 && !this.doDrawing) {
                       //减少绘制频率
                       return;
@@ -307,13 +434,13 @@
                   //增加对象
                   'object:added': (e)=>{
                     this.fabricObj.getObjects().slice(0,-1).forEach(item=>{
-                      if(item.canvas.defaultCursor==='text' && item.text === ''){
+                      if(item.type==='textbox' && item.text === ''){
                         this.fabricObj.remove(item)
                         // this.fabricObj.discardActiveObject()
                       }
                     })
 
-                    console.log(this.fabricObj)
+                    // console.log(this.fabricObj)
                     // debugger
                   },
                   'object:modified':(e)=> {
@@ -384,7 +511,9 @@
               this.initIdx = idx;
               this.currentClass = tools.name;
               this.currentTool = tools.name;
+              // 取消自由绘制
               this.fabricObj.isDrawingMode = false;
+              // 隐藏上传按钮
               this.showUploadBtn = false
               this.resetObj()
               switch(tools.name) {
@@ -398,12 +527,17 @@
                   case 'polygon':
                   this.currentTool = 'juxing';
                   break;
+                  case 'text':
+                    this.fabricObj.selection = true
+                    this.fabricObj.skipTargetFind = false
+                    // this.fabricObj.selectable = true
+                  break;
                   case 'image':
                     this.showUploadBtn = true
                     break;
-                    case 'edit':
+                  case 'edit':
                     this.edit()
-                    break;
+                  break;
                   case 'remove':
                       this.fabricObj.selection = true
                       this.fabricObj.skipTargetFind = false
@@ -429,24 +563,75 @@
           },
       //绘制文字对象
           drawText() {
-          // 创建字体对象
-              this.textboxObj = new fabric.Textbox("", {
-                left: this.mouseFrom.x,
-                top: this.mouseFrom.y,
-                width: 100,
-                fontSize: this.fontSize, // 字号
-                fontWeight:this.fontWeight,
-                fontFamily:this.fontFamily,
-                fontStyle:this.fontStyle,
-                fill: this.drawColor, // 填充色
-                hasControls: true,
-                borderColor: 'orange',
-                editingBorderColor: 'blue' // 点击
-              });
-              this.fabricObj.add(this.textboxObj);
-              this.textboxObj.enterEditing();
-              this.textboxObj.hiddenTextarea.focus();
-              // this.updateModifications(true)
+            this.selectObject = new fabric.IText('hello world',{
+              left: this.mouseFrom.x, // 位置
+              top: this.mouseFrom.y, // 位置
+              fontSize: this.fontSize, // 字号
+              fontWeight:this.fontWeight,
+              fontFamily:this.fontFamily,
+              fontStyle:this.fontStyle,
+              fill: this.drawColor, // 填充色
+              hasControls: true,
+              // width:150,
+              hasBorder:true, // 存在边框
+              borderDashArray:[3,3], // 边框线数组
+              borderColor:'red', // 边框颜色
+              editable:true,// 可以编辑文字
+              objectCaching:true, // 对象缓存
+              padding:5, // 内边距
+              // backgroundColor:'#999',
+              editingBorderColor:'orange',//
+              // selected:true,
+              // height:200
+            })
+            console.log(this.selectObject)
+            // this.selectObject.selectable = true
+            this.fabricObj.add(this.selectObject).setActiveObject(this.selectObject);
+            this.selectObject.enterEditing()
+            // this.selectObject.hasStateChanged()
+            // this.selectObject.hiddenTextarea.focus()
+          },
+
+          drawTextGroup(){
+            // let path =  "M " +
+            //     this.mouseFrom.x + " " +
+            //     this.mouseFrom.y + " L " +
+            //     this.mouseTo.x + " " +
+            //     this.mouseFrom.y + " L " +
+            //     this.mouseTo.x + " " +
+            //     this.mouseTo.y + " L " +
+            //     this.mouseFrom.x + " " +
+            //     this.mouseTo.y + " L " +
+            //     this.mouseFrom.x + " " +
+            //     this.mouseFrom.y + " z";
+            // let  fabricObject = new fabric.Path(path, {
+            //     left: this.mouseFrom.x,
+            //     top: this.mouseFrom.y,
+            //     stroke: '#000',
+            //     strokeWidth: 1,
+            //     fill: "rgba(255, 255, 255, 0)",
+            //     fillRule:'custom-textarea'
+            //   });
+            // if(fabricObject) {
+            //   this.fabricObj.add(fabricObject)
+            //   this.drawingObject = fabricObject;
+            // }
+
+            // this.textboxObj = new fabric.Textbox("请输入内容", {
+            //   left: this.mouseFrom.x,
+            //   top: this.mouseFrom.y,
+            //   width: 100,
+            //   fontSize: this.fontSize, // 字号
+            //   fontWeight:this.fontWeight,
+            //   fontFamily:this.fontFamily,
+            //   fontStyle:this.fontStyle,
+            //   fill: this.drawColor, // 填充色
+            //   hasControls: true,
+            //   borderColor: 'orange',
+            //   editingBorderColor: 'blue', // 点击
+            //   globalCompositeOperation:"custom-textarea"
+            // });
+            // this.fabricObj.Group()
           },
 
           drawing() {
