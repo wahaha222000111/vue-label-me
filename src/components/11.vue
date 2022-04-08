@@ -59,65 +59,63 @@
           </el-select>
         </li>
       </ul>
+      <el-button class="upload-btn" v-show="showUploadBtn" type="primary" @click.stop="uploadImage">上传图片</el-button>
     </div>
     <div class="canvas-wraper">
       <canvas id="canvas" ref="canvas"></canvas>
-      <img id="test-img" src="../assets/img/cup.png" style="display: none">
+      <img id="test-img" src="../assets/img/kotei_9628.png" style="display: none">
     </div>
     <div class="controlPanel">
       <div :class="[initIdx===idx ? 'contro-item active' : 'contro-item']" v-for="(item,idx) in toolsArr" :key="idx" @click="handleTools(item, idx)">
-        <i :class="'iconfont' + item.icon"></i>
+        <!--        <i :class="'iconfont' + item.icon"></i>-->
+        <span>{{item.title}}</span>
       </div>
     </div>
+    <ul class="photoTier">
+      <!--      <li v-for="item in fabricObj">111</li>-->
+    </ul>
     <div class="download">
       <button type="button" :disabled="done" @click="downLoadImage">转换为base64并预览</button>
-      <img :src="imageBase64" v-show="imageBase64!=''" alt="">
     </div>
-    <el-dialog title="尺度标准" :visible.sync="dialogVisible" width="30%" :before-close="handleClose">
-      <div class="box_dialog">
-        <div>
-          <el-input-number v-model="num" @change="handleChange" :step="1" :min="0.01" :precision="2" label="请输入尺度"></el-input-number>
-          <span class="box_cm">cm</span>
-        </div>
-        <span slot="footer" class="dialog-footer">
-          <el-button @click="handleClose">取 消</el-button>
-          <el-button type="primary" @click="handleSure">确 定</el-button>
-        </span>
-      </div>
+
+    <el-dialog :visible.sync="visible" title="预览" @before-close="()=>{visible = false}">
+      <img width="100%" :src="imageBase64" v-show="imageBase64!=''" alt="">
     </el-dialog>
   </div>
 </template>
 <script>
-import { fabric } from 'fabric';
+import { fabric } from 'fabric'
+import FontFaceObserver from 'fontfaceobserver'
 export default {
   data () {
     return {
-      dialogVisible: false, // 弹窗
-      num: 1, // 标准尺寸
-      lineWidth: 0, // 标准线段在页面上显示的长度
-      lineWidthUnit: 0, // 单位标准线段的长度，1px代表 多少 cm
+      visible: false,
       currentTool: '',
+      currentClass: '',
+      ableEdit: false,
       done: false,
       fabricObj: null,
       initIdx: 0,
       toolsArr: [
-        { name: 'pencil', icon: ' icon-pencil' },
-        { name: 'move', icon: ' el-icon-mouse' },
-        { name: 'line', icon: ' icon-line' },
-        { name: 'picture', icon: ' el-icon-picture-outline' },
-        // { name: 'arrow', icon: ' icon-arrow' },
-        // { name: 'xuxian', icon: ' icon-xuxian' },
-        { name: 'text', icon: ' icon-ziti' },
-        // { name: 'edit', title: '编辑' },
-        { name: 'juxing', icon: ' icon-juxing' },
-        { name: 'circle', icon: ' icon-yuanxing' },
-        { name: 'ellipse', icon: ' icon-tuoyuanxing' },
-        // { name: 'equilateral', icon: ' icon-sanjiaoxing' },
-        { name: 'remove', icon: ' icon-remove' },
-        // { name: 'undo', icon: ' icon-huitui' },
-        // { name: 'redo', icon: ' icon-xiangqian' },
-        { name: 'reset', icon: ' icon-reset' },
+        { name: 'pencil', icon: ' icon-pencil', title: "画笔" },
+        { name: 'lineSegment', title: '线段' },
+        // {name: 'line', icon: ' icon-line',title:"直线"},
+        // {name: 'arrow', icon: ' icon-arrow',title:"箭头"},
+        // {name: 'xuxian', icon: ' icon-xuxian',title:"虚线"},
+        { name: 'text', icon: ' icon-ziti', title: '文本' },
+        { name: 'polygon', title: '多边形' },
+        // {name: 'juxing', icon: ' icon-juxing',title:"矩形"},
+        // {name: 'cricle', icon: ' icon-yuanxing',title:'圆形'},
+        // {name: 'ellipse', icon: ' icon-tuoyuanxing',title:'椭圆'},
+        // {name: 'equilateral',icon: ' icon-sanjiaoxing',title:"三角形"},
+        { name: 'image', icon: 'icon-image', title: '图片' },
+        { name: 'edit', title: '编辑' },
+        { name: 'remove', icon: ' icon-remove', title: "删除" },
+        { name: 'undo', icon: ' icon-huitui', title: "上一步" },
+        { name: 'redo', icon: ' icon-xiangqian', title: "下一步" },
+        { name: 'reset', icon: ' icon-reset', title: '清空' },
       ],
+      showUploadBtn: false,
       mouseFrom: {},
       mouseTo: {},
       moveCount: 1,
@@ -129,16 +127,16 @@ export default {
       drawWidth: 2,
       imageBase64: '',
       zoom: window.zoom ? window.zoom : 1,
-      currentClass: '',
-      lineSegmentList: [],
-      polygonList: [],
-      pencilWeight: 1,
-      fontWeightList: [100, 200, 300, 400, 500, 600, 700, 800],
       fontFamily: "Microsoft YaHei",
       fontFamilyList: [],
       fontWeight: 400,
-      fontSize: 40,
+      fontWeightList: [100, 200, 300, 400, 500, 600, 700, 800],
       fontStyle: 'normal',
+      fontSize: 40,
+      lineSegmentList: [],
+      polygonList: [],
+      pencilWeight: 1,
+      selectObject: null // 当前选中的对象
     }
   },
   computed: {
@@ -181,7 +179,6 @@ export default {
     },
   },
   created () {
-    // console.log('create');
   },
   mounted () {
     this.lineSegmentList = [
@@ -227,61 +224,88 @@ export default {
       ch: '测试1',
       en: 'test1'
     }]
-    // console.log('mounted');
     //初始化canvas
     this.initCanvas()
   },
   methods: {
+    /**
+     * @desc 编辑事件
+     * */
+    edit () {
+      // let dataJson = this.fabricHistoryJson.map(item=>JSON.parse(item))
+      // console.log(dataJson)
+      this.ableEdit = true;
+      this.doDrawing = false;
+      // this.currentTool = ''
+      this.fabricObj.isDrawingMode = false;
+      this.fabricObj.selectable = true;
+      this.fabricObj.selection = true;
+      this.fabricObj.skipTargetFind = false;
+    },
     initCanvas () {
-      let _this = this
       this.fabricObj = new fabric.Canvas('canvas', {
-        width: this.canvasWidth - 50,
-        height: 500,
-        // backgroundColor: 'black',
         // isDrawingMode: false,
         // selectable: true,
-        // selection: false,
+        // selection: true,
         devicePixelRatio: true, //Retina 高清屏 屏幕支持
       });
-      let img = document.getElementById('test-img');
+      // let img = document.getElementById('test-img');
       this.fabricObj.freeDrawingBrush.color = this.drawColor
-      this.fabricObj.freeDrawingBrush.width = 2
-
+      // this.fabricObj.freeDrawingBrush.width = 1
+      this.fabricObj.setWidth(this.canvasWidth)
+      this.fabricObj.setHeight(500);
       this.fabricObj.add(
-        // new fabric.Rect({ top: 100, left: 100, width: 500, height: 100, fill: 'rgba(255,255,255,0)', stroke: '#000' }),
+        // new fabric.Rect({ top: 100, left: 100, width: 50, height: 50, fill: '#f55' }),
         // new fabric.Circle({ top: 140, left: 230, radius: 75, fill: 'green' }),
         // new fabric.Triangle({ top: 300, left: 210, width: 100, height: 100, fill: 'blue' }),
-        // new fabric.Image(img, { top: 0, left: 0, width: 500, hegith: 500 }),
+        // new fabric.Image(img,{top:0,left:0,width:500,height:500}),
       );
-
-      fabric.Object.prototype.transparentCorners = false;
-      this.fabricObj.preserveObjectStacking = true;
-
       //绑定画板事件
-      this.fabricObjAddEvent();
+      this.fabricObjAddEvent()
     },
     //时间监听
     fabricObjAddEvent () {
-      this.panning = false;
       this.fabricObj.on({
+        'mouse:dblclick': (e) => {
+          console.log('双击事件', e)
+          console.log(this.fabricObj)
+          // if(this.selectObject && ['textbox','i-text'].includes(this.selectObject.type)){
+          //   this.selectObject.enterEditing()
+          // }
+        },
         'mouse:down': (o) => {
+          // if (this.ableEdit){
+          //   return
+          // }
+          // this.doDrawing = true;
+          // // e.preventDefault();
+          // //鼠标按下
+          // console.log('mouse down')
+          // this.mouseFrom.x = o.pointer.x;
+          // this.mouseFrom.y = o.pointer.y;
+          // if(o.target){
+          //   if(['textbox','i-text'].includes(o.target.type)){
+          //     this.selectObject = o.target
+          //     this.drawColor = o.target.fill
+          //     this.fontFamily = o.target.fontFamily
+          //     this.fontSize = o.target.fontSize
+          //     this.fontStyle = o.target.fontStyle
+          //     this.fontWeight = o.target.fontWeight
+          //   }
+          // }
           this.mouseFrom.x = o.pointer.x;
           this.mouseFrom.y = o.pointer.y;
           this.doDrawing = true;
+          // if(this.currentTool=='text') {
+          //   this.drawText()
+          // }
         },
         'mouse:up': (o) => {
           this.mouseTo.x = o.pointer.x;
           this.mouseTo.y = o.pointer.y;
-          this.drawingObject = null;
-          this.moveCount = 1;
+          // this.drawingObject = null;
+          // this.moveCount = 1;
           this.doDrawing = false;
-
-          if (this.currentTool == 'line') {
-            this.dialogVisible = true;
-          }
-          if (this.currentTool == 'juxing' || this.currentTool == 'ellipse' || this.currentTool == 'circle') {
-            this.drawTextUnit();
-          }
           /**
            *  字体相关：
            *  1. 需要判断当前的工具是否选择了text,之后所有的操作都将在text之中运行
@@ -314,13 +338,31 @@ export default {
               }
             } else {
               console.log('框选的文本框', this.mouseFrom, this.mouseTo)
-              // this.drawTextGroup()
+              this.drawTextGroup()
             }
           } else {
-            this.updateModifications(true);
+            this.updateModifications(true)
           }
         },
+        // 'mouse:over':(e)=>{
+        //   console.log(e)
+        // },
         'mouse:move': (o) => {
+          // console.warn(o)
+          // if(this.currentTool==='text'){
+          //   if(o.target){
+          //     this.fabricObj.setCursor('text')
+          //   }else {
+          //     this.fabricObj.setCursor('crosshair')
+          //   }
+          // }else{
+          //   this.fabricObj.setCursor()
+          // }
+          // console.log(this.moveCount)
+          // if(this.moveCount % 2 && this.currentTool==='text'){
+          //   console.log('move事件',o)
+          // }
+          // this.moveCount++;
           if (this.moveCount % 2 && !this.doDrawing) {
             //减少绘制频率
             return;
@@ -330,47 +372,23 @@ export default {
           this.mouseTo.y = o.pointer.y;;
           this.drawing();
         },
-        //对象移动时间 限制移动在画布内
+        //对象移动时间
         'object:moving': (e) => {
           e.target.opacity = 0.5;
-          let padding = 10;
-          var obj = e.target;
-
-          // if object is too big ignore
-          if (obj.currentHeight > obj.canvas.height - padding * 2 ||
-            obj.currentWidth > obj.canvas.width - padding * 2) {
-            return;
-          }
-          obj.setCoords();
-
-          // top-left corner
-          if (obj.getBoundingRect().top < padding ||
-            obj.getBoundingRect().left < padding) {
-            obj.top = Math.max(obj.top, obj.top - obj.getBoundingRect().top + padding);
-            obj.left = Math.max(obj.left, obj.left - obj.getBoundingRect().left + padding);
-          }
-
-          // bot-right corner
-          if (obj.getBoundingRect().top + obj.getBoundingRect().height > obj.canvas.height - padding ||
-            obj.getBoundingRect().left + obj.getBoundingRect().width > obj.canvas.width - padding) {
-            obj.top = Math.min(
-              obj.top,
-              obj.canvas.height - obj.getBoundingRect().height + obj.top - obj.getBoundingRect().top - padding);
-            obj.left = Math.min(
-              obj.left,
-              obj.canvas.width - obj.getBoundingRect().width + obj.left - obj.getBoundingRect().left - padding);
-          }
         },
         //增加对象
         'object:added': (e) => {
-          // this.fabricObj.getObjects().slice(0, -1).forEach(item => {
-          //   if (item.type === 'textbox' && item.text === '') {
-          //     this.fabricObj.remove(item)
-          //     // this.fabricObj.discardActiveObject()
-          //   }
-          // })
+          this.fabricObj.getObjects().slice(0, -1).forEach(item => {
+            if (item.type === 'textbox' && item.text === '') {
+              this.fabricObj.remove(item)
+              // this.fabricObj.discardActiveObject()
+            }
+          })
+          // console.log(this.fabricObj)
+          // debugger
         },
         'object:modified': (e) => {
+          console.log('object:modified')
           e.target.opacity = 1;
           let object = e.target;
           this.updateModifications(true)
@@ -434,44 +452,59 @@ export default {
     },
     handleTools (tools, idx) {
       this.initIdx = idx;
+      this.currentClass = tools.name;
       this.currentTool = tools.name;
+      // 取消自由绘制
       this.fabricObj.isDrawingMode = false;
-      this.resetObj();
-
+      // 隐藏上传按钮
+      this.showUploadBtn = false
+      this.resetObj()
       switch (tools.name) {
         case 'pencil':
+          this.currentTool = 'pencil';
           this.fabricObj.isDrawingMode = true;
           break;
-        case 'remove':
-          this.fabricObj.selection = true;
-          this.fabricObj.skipTargetFind = false;
-          this.fabricObj.selectable = true;
+        case 'lineSegment':
+          this.currentTool = 'line';
           break;
-        case 'reset':
-          this.fabricObj.clear();
-          break;
-        case 'redo':
-          this.redo();
-          break;
-        case 'undo':
-          this.undo();
-          break;
-        case 'move':
-          this.fabricObj.skipTargetFind = false;
-          break;
-        case 'picture':
-          this.renderPicture();
+        case 'polygon':
+          this.currentTool = 'juxing';
           break;
         case 'text':
           this.fabricObj.selection = true
           this.fabricObj.skipTargetFind = false
           // this.fabricObj.selectable = true
           break;
+        case 'image':
+          this.showUploadBtn = true
+          break;
+        case 'edit':
+          this.edit()
+          break;
+        case 'remove':
+          this.fabricObj.selection = true
+          this.fabricObj.skipTargetFind = false
+          this.fabricObj.selectable = true
+          break;
+        case 'reset':
+          this.fabricObj.clear();
+          this.updateModifications(true)
+          break;
+        case 'redo':
+          this.$nextTick(() => {
+            this.redo();
+          })
+          break;
+        case 'undo':
+          this.$nextTick(() => {
+            this.undo();
+          })
+          break;
         default:
           break;
       }
     },
-    // 绘制文字对象
+    //绘制文字对象
     drawText () {
       this.selectObject = new fabric.IText('hello world', {
         left: this.mouseFrom.x, // 位置
@@ -494,95 +527,54 @@ export default {
         // selected:true,
         // height:200
       })
-      console.log('selectObject', this.selectObject)
+      console.log(this.selectObject)
       // this.selectObject.selectable = true
-      this.fabricObj.add(this.selectObject);
-      this.fabricObj.setActiveObject(this.selectObject);
-      // this.selectObject.enterEditing();
+      this.fabricObj.add(this.selectObject).setActiveObject(this.selectObject);
+      this.selectObject.enterEditing()
       // this.selectObject.hasStateChanged()
       // this.selectObject.hiddenTextarea.focus()
     },
-    drawTextGroup () { },
-    // 绘制文字备注
-    drawTextUnit () {
-      console.log('this.currentTool', this.currentTool)
-      const { currentTool } = this;
-      // 文字备注位置参数
-      let textboxLeft1, textboxTop1, textboxLeft2, textboxTop2, textWidth, textHeight = 0;
-
-      // 鼠标移动的长度 绝对值
-      const w = Math.abs(this.mouseTo.x - this.mouseFrom.x);
-      // 鼠标移动的宽度 绝对值
-      const h = Math.abs(this.mouseTo.y - this.mouseFrom.y);
-      console.log('this.lineWidthUnit', this.lineWidthUnit)
-
-      // path 路径
-      const xf = this.mouseFrom.x;
-      const xt = this.mouseTo.x;
-      const yf = this.mouseFrom.y;
-      const yt = this.mouseTo.y;
-      const path = `M${xf} ${yf} L${xf} ${yt} L${xt} ${yt} Z`;
-
-      console.log(path)
-      if (currentTool === 'juxing') {
-        textboxLeft1 = Math.abs((this.mouseTo.x - this.mouseFrom.x) / 2 + this.mouseFrom.x) - 20;
-        textboxTop1 = this.mouseFrom.y - 20;
-        textboxLeft2 = this.mouseTo.x + 5;
-        textboxTop2 = Math.abs((this.mouseTo.y - this.mouseFrom.y) / 2 + this.mouseFrom.y) - 10;
-        textWidth = `${(this.lineWidthUnit * w).toFixed(2)}cm`;
-        textHeight = `${(this.lineWidthUnit * h).toFixed(2)}cm`;
-      }
-
-      if (currentTool === 'ellipse') {
-        textboxLeft1 = this.mouseFrom.x;
-        textboxTop1 = this.mouseFrom.y - h - 20;
-        textboxLeft2 = this.mouseFrom.x + w + 5;
-        textboxTop2 = this.mouseFrom.y - 10;
-        // 椭圆周长
-        const l = (2 * Math.PI * h + 4 * (w - h)) / 2
-        textWidth = `${(this.lineWidthUnit * l).toFixed(2)}cm`;
-        textHeight = `${(this.lineWidthUnit * l).toFixed(2)}cm`;
-      }
-
-      if (currentTool === 'circle') {
-        textboxLeft1 = this.mouseFrom.x + w / 2 + 10;
-        textboxTop1 = this.mouseFrom.y - 20;
-        textboxLeft2 = this.mouseFrom.x + w + 30;
-        textboxTop2 = this.mouseFrom.y + h;
-        // 椭圆周长
-        const l = Math.PI * w / 2
-        textWidth = `${(this.lineWidthUnit * l).toFixed(2)}cm`;
-        textHeight = `${(this.lineWidthUnit * l).toFixed(2)}cm`;
-      }
-
-      this.textboxObjWidth = new fabric.Textbox(textWidth, {
-        left: textboxLeft1,
-        top: textboxTop1,
-        fontSize: 18,
-        fill: this.drawColor,
-        hasControls: true,
-      });
-      this.fabricObj.add(this.textboxObjWidth);
-
-      this.textboxObjHeight = new fabric.Textbox(textHeight, {
-        left: textboxLeft2,
-        top: textboxTop2,
-        fontSize: 18,
-        fill: this.drawColor,
-        hasControls: true,
-      });
-      this.fabricObj.add(this.textboxObjHeight);
-
-      let objs = this.fabricObj.getObjects();
-      var group = new fabric.Group([this.textboxObjWidth, this.textboxObjHeight, objs[objs.length - 3]], {})
-
-      this.fabricObj.add(group);
+    drawTextGroup () {
+      // let path =  "M " +
+      //     this.mouseFrom.x + " " +
+      //     this.mouseFrom.y + " L " +
+      //     this.mouseTo.x + " " +
+      //     this.mouseFrom.y + " L " +
+      //     this.mouseTo.x + " " +
+      //     this.mouseTo.y + " L " +
+      //     this.mouseFrom.x + " " +
+      //     this.mouseTo.y + " L " +
+      //     this.mouseFrom.x + " " +
+      //     this.mouseFrom.y + " z";
+      // let  fabricObject = new fabric.Path(path, {
+      //     left: this.mouseFrom.x,
+      //     top: this.mouseFrom.y,
+      //     stroke: '#000',
+      //     strokeWidth: 1,
+      //     fill: "rgba(255, 255, 255, 0)",
+      //     fillRule:'custom-textarea'
+      //   });
+      // if(fabricObject) {
+      //   this.fabricObj.add(fabricObject)
+      //   this.drawingObject = fabricObject;
+      // }
+      // this.textboxObj = new fabric.Textbox("请输入内容", {
+      //   left: this.mouseFrom.x,
+      //   top: this.mouseFrom.y,
+      //   width: 100,
+      //   fontSize: this.fontSize, // 字号
+      //   fontWeight:this.fontWeight,
+      //   fontFamily:this.fontFamily,
+      //   fontStyle:this.fontStyle,
+      //   fill: this.drawColor, // 填充色
+      //   hasControls: true,
+      //   borderColor: 'orange',
+      //   editingBorderColor: 'blue', // 点击
+      //   globalCompositeOperation:"custom-textarea"
+      // });
+      // this.fabricObj.Group()
     },
     drawing () {
-      let _this = this;
-      const w = Math.abs(this.mouseTo.x - this.mouseFrom.x);
-      const h = Math.abs(this.mouseTo.y - this.mouseFrom.y);
-
       if (this.drawingObject) {
         this.fabricObj.remove(this.drawingObject)
       }
@@ -595,10 +587,7 @@ export default {
           fabricObject = new fabric.Line([this.mouseFrom.x, this.mouseFrom.y, this.mouseTo.x, this.mouseTo.y], {
             stroke: this.drawColor,
             strokeWidth: this.drawWidth
-          });
-
-          // 勾股定理求线段长度
-          this.lineWidth = Math.sqrt(Math.pow(w, 2) + Math.pow(h, 2));
+          })
           break;
         case 'arrow':
           fabricObject = new fabric.Path(this.drawArrow(this.mouseFrom.x, this.mouseFrom.y, this.mouseTo.x, this.mouseTo.y, 17.5, 17.5), {
@@ -610,6 +599,13 @@ export default {
         case 'xuxian': //doshed line
           fabricObject = new fabric.Line([this.mouseFrom.x, this.mouseFrom.y, this.mouseTo.x, this.mouseTo.y], {
             strokeDashArray: [10, 3],
+            stroke: this.drawColor,
+            strokeWidth: this.drawWidth
+          })
+          break;
+        case 'dotLine': //doshed line
+          fabricObject = new fabric.Line([this.mouseFrom.x, this.mouseFrom.y, this.mouseTo.x, this.mouseTo.y], {
+            strokeDashArray: [10, 3, 3, 3],
             stroke: this.drawColor,
             strokeWidth: this.drawWidth
           })
@@ -626,16 +622,15 @@ export default {
             this.mouseTo.y + " L " +
             this.mouseFrom.x + " " +
             this.mouseFrom.y + " z";
-
           fabricObject = new fabric.Path(path, {
             left: this.mouseFrom.x,
             top: this.mouseFrom.y,
             stroke: this.drawColor,
             strokeWidth: this.drawWidth,
-            fill: "rgba(255, 255, 255, 0)",
+            fill: "rgba(255, 255, 255, 0)"
           });
           break;
-        case "circle": //正圆
+        case "cricle": //正圆
           let radius = Math.sqrt((this.mouseTo.x - this.mouseFrom.x) * (this.mouseTo.x - this.mouseFrom.x) + (this.mouseTo.y - this.mouseFrom.y) * (this.mouseTo.y - this.mouseFrom.y)) / 2;
           fabricObject = new fabric.Circle({
             left: this.mouseFrom.x,
@@ -719,88 +714,72 @@ export default {
       })
       this.imageBase64 = base64URl
       this.done = false
+      this.visible = true
     },
-    /* 关闭弹窗 */
-    handleClose () {
-      this.dialogVisible = false;
-      this.undo();
-    },
-    /* 获取数字框值 */
-    handleChange (value) {
-      this.num = value;
-    },
-    /* 确认弹窗，计算标准 */
-    handleSure () {
-      this.lineWidthUnit = this.num / this.lineWidth;
-      this.dialogVisible = false;
-      console.log('lineWidthUnit', this.lineWidthUnit);
-
-      let objs = this.fabricObj.getObjects();
-      console.log('objs', objs)
-      objs.map((item, index) => {
-        if (item.type === 'group') {
-          let height = objs[index - 3].height;
-          let width = objs[index - 3].width;
-          objs[index - 1].set({
-            text: `${(this.lineWidthUnit * height).toFixed(2)}cm`
-          })
-          objs[index - 2].set({
-            text: `${(this.lineWidthUnit * width).toFixed(2)}cm`
-          })
-        }
+    async uploadImage () {
+      let imageMessage = null
+      const [fileHandle] = await window.showOpenFilePicker({
+        types: [
+          {
+            description: 'Images',
+            accept: {
+              'image/*': ['.png', '.gif', '.jpeg', '.jpg']
+            }
+          },
+        ],
+        excludeAcceptAllOption: true,
+        multiple: false
       })
-      this.fabricObj.remove(objs[objs.length - 1]);
-      // this.fabricObj.sendBackwards(objs[objs.length - 2]);
-      this.fabricObj.renderAll();
+      imageMessage = await fileHandle.getFile()
+      // let imageELement = document.createElement('img')
+      // imageELement.src= await this.getBase64(imageMessage)
+      let image = new Image()
+      image.src = await this.getBase64(imageMessage);
+      image.onload = () => {
+        let scaleX = (image.width / this.$refs.canvas.clientWidth).toFixed(2)
+        let scaleY = (image.height / this.$refs.canvas.clientHeight).toFixed(2)
+        console.log(scaleX, scaleY)
+        let scale = (Math.abs(1 - (scaleX > scaleY ? scaleY : scaleX))).toFixed(2)
+        console.log(scale)
+        const imageObj = new fabric.Image(image, {
+          left: 10, // 图片相对画布的左侧距离
+          top: 60, // 图片相对画布的顶部距离
+          angle: 0, // 图片旋转角度
+          opacity: 0.85, // 图片透明度
+          // 这里可以通过scaleX和scaleY来设置图片绘制后的大小，这里为原来大小的一半
+          scaleX: scale,
+          scaleY: scale,
+          hasControls: true,
+        });
+        imageObj.set({
+          // hasControls:true,
+          // transparentCorners: false,
+          // cornerColor: 'blue',
+          // cornerStrokeColor: 'red',
+          // borderColor: 'red',
+          // cornerSize: 12,
+          // padding: 10,
+          // cornerStyle: 'circle',
+          // borderDashArray: [3, 3]
+        });
+        // 添加对象后, 如下图
+        // this.fabricObj.isDrawingMode =  true
+        this.fabricObj.add(imageObj)
+      }
     },
-    /* 渲染图片 */
-    renderPicture () {
-      // 获取图片的原始尺寸
-      let img = document.getElementById('test-img');
-      let img_url = require('../assets/img/cup.png');
-      let image = new Image();
-      image.src = img_url;
-      console.log('width:' + image.width + ',height:' + image.height);
-
-
-      // this.fabricObj.setBackgroundImage(require('../assets/img/cup.png'), this.fabricObj.renderAll.bind(this.fabricObj), {
-      //   opacity: 1,
-      //   width: image.width,
-      //   height: image.height,
-      //   repeat: 'no-repeat',
-      //   // Needed to position backgroundImage at 0/0
-      //   originX: 'left',
-      //   originY: 'top',
-      // });
-
-      let imgInstance = new fabric.Image(img, {
-        left: 0, // 图片相对画布的左侧距离
-        top: 0, // 图片相对画布的顶部距离
-        width: image.width,
-        height: image.height,
-        repeat: 'no-repeat',
-        // angle: 30, // 图片旋转角度
-        // opacity: 0.85, // 图片透明度
-        // 这里可以通过scaleX和scaleY来设置图片绘制后的大小，这里为原来大小的一半
-        scaleX: 0.5,
-        scaleY: 0.5
-      });
-      this.fabricObj.add(imgInstance);
-    },
-    /**
-     * @desc 编辑事件
-     * */
-    edit () {
-      // let dataJson = this.fabricHistoryJson.map(item=>JSON.parse(item))
-      // console.log(dataJson)
-      this.ableEdit = true;
-      this.doDrawing = false;
-      // this.currentTool = ''
-      this.fabricObj.isDrawingMode = false;
-      this.fabricObj.selectable = true;
-      this.fabricObj.selection = true;
-      this.fabricObj.skipTargetFind = false;
-    },
+    // 获取文件的base64信息
+    getBase64 (file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        //开始读文件
+        //readAsDataURL: dataurl它的本质就是图片的二进制数据， 进行base64加密后形成的一个字符串，
+        reader.readAsDataURL(file)
+        // 成功和失败返回对应的信息，reader.result一个base64，可以直接使用
+        reader.onload = () => resolve(reader.result)
+        // 失败返回失败的信息
+        reader.onerror = error => reject(error)
+      })
+    }
   },
 }
 </script>
@@ -821,46 +800,34 @@ export default {
 .wraper .controlPanel {
   width: 100%;
   height: 62px;
-  /* background: #ddd; */
+  background: #ddd;
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
   margin-bottom: 15px;
 }
 .wraper .controlPanel .contro-item {
   flex-basis: 100px;
+  height: 40px;
   border-right: 1px solid #dad7d9;
   text-align: center;
   cursor: pointer;
   background: #fefefe;
 }
-.wraper .controlPanel .contro-item i {
-  font-size: 38px;
-  line-height: 62px;
+.wraper .controlPanel .contro-item span {
+  font-size: 16px;
+  line-height: 40px;
 }
-.wraper .controlPanel .contro-item.active i {
+.wraper .controlPanel .contro-item.active {
   background: #e34f51;
+}
+.wraper .controlPanel .contro-item.active span {
   color: #fff;
   border-radius: 3px;
-  font-size: 42px;
+  font-size: 20px;
 }
 .download img {
   width: 100%;
-}
-.box_dialog {
-  padding: 20px;
-}
-.wraper >>> .el-dialog__header {
-  padding: 5px 20px;
-  text-align: center;
-}
-.box_cm {
-  margin-left: 10px;
-}
-.box_dialog >>> .dialog-footer {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
 }
 .operate {
   display: flex;
@@ -879,4 +846,10 @@ export default {
   display: flex;
   align-items: center;
 }
+/*.upload-btn{*/
+/*  position: fixed;*/
+/*  left: 10px;*/
+/*  top: 60px;*/
+/*  z-index: 1;*/
+/*}*/
 </style>
