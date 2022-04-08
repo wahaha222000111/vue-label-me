@@ -147,8 +147,7 @@
             drawWidth: 2,
             imageBase64: '',
             zoom: window.zoom ? window.zoom : 1,
-            fontFamily:window.getComputedStyle(document.body)['fontFamily'],
-            // fontFamily:'"LiDeBiao-Xing32ea2bb9de92440e"',
+            fontFamily:"Microsoft YaHei",
             fontFamilyList:[],
             fontWeight:400,
             fontWeightList:[100,200,300,400,500,600,700,800],
@@ -187,8 +186,7 @@
       },
       // 监听画笔预设
       textPreview(){
-        console.log(this.selectObject.type)
-        if(['textbox','i-text'].includes(this.selectObject.type)){
+        if(this.selectObject && ['textbox','i-text'].includes(this.selectObject.type)){
           this.selectObject.set({
             fontSize: this.fontSize, // 字号
             fontWeight:this.fontWeight,
@@ -196,40 +194,19 @@
             fontStyle:this.fontStyle,
             fill: this.drawColor, // 填充色
           })
-          // fabric.charWidthsCache[this.selectObject] = {}
-          // this.fabricObj.getActiveObject()._initDimensions()
-          // this.fabricObj.getActiveObject().setCoords();
           this.fabricObj.requestRenderAll()
         }
       },
-      // fontFamily(newVal){
-      //   this.fabricObj.getActiveObject().set('fontFamily',newVal)
-      //   this.fabricObj.requestRenderAll()
-      //   // console.log(newVal.slice(1,newVal.length-1))
-      //   // let font = new FontFaceObserver(newVal.slice(1,newVal.length-1))
-      //   // font.load().then(()=>{
-      //   //   this.selectObject.set('fontFamily',font)
-      //   //   this.fabricObj.requestRenderAll()
-      //   // }).catch(function(e) {
-      //   //   console.log(e)
-      //   //   alert('font loading failed ' + font);
-      //   // });
-      //   // console.log(newVal)
-      //   // if(newVal === '"winmantun23001"'){
-      //   //   window.$webfont.submit('test1')
-      //   // }
-      // }
     },
       created(){
       },
       mounted() {
-        console.log(window.$webfont)
-          this.lineSegmentList = [
-            { label:'直线', value:'line', url:'' },
-            { label:'虚线', value:'xuxian', url:'' },
-            { label:'箭头', value:'arrow', url:'' },
-            { label:'点划线', value:'dotLine', url:'' },
-          ]
+        this.lineSegmentList = [
+          { label:'直线', value:'line', url:'' },
+          { label:'虚线', value:'xuxian', url:'' },
+          { label:'箭头', value:'arrow', url:'' },
+          { label:'点划线', value:'dotLine', url:'' },
+        ]
         this.polygonList = [
             { label:'矩形', value:'juxing', url:'' },
             { label:'圆形', value:'cricle', url:'' },
@@ -238,34 +215,34 @@
           ]
         this.fontFamilyList = [{
           ch: '宋体',
-          en: '"SimSun"'
+          en: 'SimSun'
         }, {
           ch: '黑体',
-          en: '"SimHei"'
+          en: 'SimHei'
         }, {
           ch: '微软雅黑',
-          en: '"Microsoft YaHei"'
+          en: 'Microsoft YaHei'
         }, {
           ch: '微软正黑体',
-          en: '"Microsoft JhengHei"'
+          en: 'Microsoft JhengHei'
         }, {
           ch: '楷体',
-          en: '"KaiTi"'
+          en: 'KaiTi'
         }, {
           ch: '新宋体',
-          en: '"NSimSun"'
+          en: 'NSimSun'
         }, {
           ch: '仿宋',
-          en: '"FangSong"'
+          en: 'FangSong'
         },{
           ch:'德彪钢笔行书',
-          en:'"LiDeBiao-Xing32ea2bb9de92440e"'
+          en:'LiDeBiao-Xing32ea2bb9de92440e'
         },{
           ch:'测试',
-          en:'"testFont"'
+          en:'testFont'
         },{
           ch:'测试1',
-          en:'"test1"'
+          en:'test1'
         }]
 
           //初始化canvas
