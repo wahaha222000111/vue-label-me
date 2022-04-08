@@ -41,7 +41,7 @@ export default {
       fabricObj: null,
       initIdx: 0,
       toolsArr: [
-        // { name: 'pencil', icon: ' icon-pencil' },
+        { name: 'pencil', icon: ' icon-pencil' },
         { name: 'move', icon: ' el-icon-mouse' },
         { name: 'line', icon: ' icon-line' },
         { name: 'picture', icon: ' el-icon-picture-outline' },
