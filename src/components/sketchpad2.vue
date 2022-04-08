@@ -28,78 +28,100 @@ export default {
   methods: {
     initCanvas () {
       let _this = this;
-      let canvas = this.__canvas = new fabric.Canvas('canvas');
+      let canvas = this.canvas = new fabric.Canvas('canvas');
       let img = document.getElementById('test-img');
       canvas.freeDrawingBrush.color = '#E34F51'
       canvas.freeDrawingBrush.width = 2;
       fabric.Object.prototype.transparentCorners = false;
       var radius = 300;
-      canvas.preserveObjectStacking = true;
+      //   canvas.preserveObjectStacking = true;
+      canvas.selection = true;
+      canvas.skipTargetFind = false;
+      canvas.selectable = true;
 
-      //   let img_url = require('../assets/img/cup.png');
-      //   let image = new Image();
-      //   image.src = img_url;
-      //   canvas.setBackgroundImage(require('../assets/img/cup.png'), canvas.renderAll.bind(canvas), {
-      //     opacity: 1,
-      //     width: image.width,
-      //     height: image.height,
-      //     repeat: 'no-repeat',
-      //     // Needed to position backgroundImage at 0/0
-      //     originX: 'left',
-      //     originY: 'top',
-      //   });
-
-
-
-      fabric.Image.fromURL(require('../assets/img/cup.png'), function (img) {
-        var scalar = 1, abort;
-        var path = 'M 500 200 L 500 250 L 350 250 L 350 200 Z M 500 300 L 500 350 L 350 350 L 350 300 Z';
-        var shell = new fabric.Path(path, {
-          fill: '',
-          stroke: 'blue',
-          strokeWidth: 5,
-          scaleX: 2,
-          scaleY: 2,
-          lockScalingX: true,
-          lockScalingY: true,
-          lockSkewingX: true,
-          lockSkewingY: true,
-          originX: 'center',
-          originY: 'center',
-        });
-        var clipPath = new fabric.Path(path, {
-          absolutePositioned: true,
-          originX: 'center',
-          originY: 'center',
-          scaleX: 2,
-          scaleY: 2
-        });
-
-        img.scale(0.5).set({
-          left: 200,
-          top: 180,
-          clipPath: clipPath
-        });
-        shell.on('moving', ({ e, transform, pointer }) => {
-          //  only because they are absolutePositioned
-          clipPath.setPositionByOrigin(shell.getCenterPoint(), 'center', 'center');
-          img.set('dirty', true);
-        });
-        shell.on('rotating', () => {
-          clipPath.set({ angle: shell.angle });
-          img.set('dirty', true);
-        });
-        shell.on('selected', () => {
-          //   abort();
-        });
-        shell.on('deselected', () => {
-          scalar = 1;
-        });
+      //添加背景
+      let img_url = require('../assets/img/cup.png');
+      let image = new Image();
+      image.src = img_url;
+      canvas.setBackgroundImage(require('../assets/img/cup.png'), canvas.renderAll.bind(canvas), {
+        opacity: 1,
+        width: image.width,
+        height: image.height,
+        repeat: 'no-repeat',
+        // Needed to position backgroundImage at 0/0
+        originX: 'left',
+        originY: 'top',
+      });
 
 
-        img.clipPath = clipPath;
-        canvas.add(img, shell);
-        canvas.setActiveObject(img);
+      console.log('fabric', fabric)
+      let text = new fabric.IText("到这里渲染文字就完成了，fabric.js绘制一个可编辑，拉伸，缩放，旋转，移动的文字就好了。", {
+        fontSize: 50,
+        fill: 'yellow',
+        hasControls: true,
+        // globalCompositeOperation: 'source-atop'
+      });
+
+      var scalar = 1, abort;
+      var path = 'M 500 200 L 500 250 L 350 250 L 350 200 Z M 500 300 L 500 350 L 350 350 L 350 300 Z';
+      var shell = new fabric.Path(path, {
+        fill: '',
+        stroke: 'blue',
+        strokeWidth: 5,
+        scaleX: 2,
+        scaleY: 2,
+        lockScalingX: true,
+        lockScalingY: true,
+        lockSkewingX: true,
+        lockSkewingY: true,
+        originX: 'center',
+        originY: 'center',
+        hasControls: false
+      });
+      var clipPath = new fabric.Path(path, {
+        absolutePositioned: true,
+        originX: 'center',
+        originY: 'center',
+        scaleX: 2,
+        scaleY: 2,
+        hasControls: false
+      });
+
+      text.scale(0.5).set({
+        left: 200,
+        top: 250,
+        clipPath: clipPath
+      });
+      shell.on('moving', ({ e, transform, pointer }) => {
+        //  only because they are absolutePositioned
+        clipPath.setPositionByOrigin(shell.getCenterPoint(), 'center', 'center');
+        text.set('dirty', true);
+      });
+      shell.on('rotating', () => {
+        clipPath.set({ angle: shell.angle });
+        text.set('dirty', true);
+      });
+      shell.on('selected', () => {
+        //   abort();
+      });
+      shell.on('deselected', () => {
+        scalar = 1;
+      });
+
+      shell.set('selectable', false)
+
+      text.clipPath = clipPath;
+      canvas.add(text, shell);
+      canvas.setActiveObject(text);
+      canvas.sendToBack(shell)
+      this.fabricObjAddEvent();
+    },
+    fabricObjAddEvent () {
+      this.panning = false;
+      this.canvas.on({
+        'mouse:up': (o) => {
+
+        },
       });
     },
   }

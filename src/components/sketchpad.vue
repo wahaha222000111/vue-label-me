@@ -126,6 +126,7 @@ export default {
           }
         },
         'mouse:up': (o) => {
+          console.log(123)
           this.mouseTo.x = o.pointer.x;
           this.mouseTo.y = o.pointer.y;
           this.drawingObject = null;
